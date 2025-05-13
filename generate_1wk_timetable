@@ -1,0 +1,81 @@
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*Parsing dates involving a day of month without a year specified.*")
+
+import dash
+from dash import dcc, html
+import plotly.graph_objects as go
+
+# List of theatres
+theatres = ['KCDAY1', 'KCDAY3', 'KORTHTH1', 'KORTHTH2', 'KORTHTH3', 'KORTHTH4', 'QEDTH1', 'QEDTH3', 'QETH10', 'QETH7', 'QETH9', 'WHDAY11']
+
+def create_empty_timetable():
+    """Generate a blank timetable template for a week (Mon-Sun) vs hours (00:00-23:00)"""
+    # Abbreviated day labels
+    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    # Hours from 0 (00:00) to 23 (23:00)
+    hours = list(range(24))
+    hour_labels = [f"{h:02d}:00" for h in hours]
+
+    fig = go.Figure()
+    # Invisible heatmap for layout structure
+    fig.add_trace(
+        go.Heatmap(
+            z=[[None for _ in days] for _ in hours],
+            x=days,
+            y=hours,
+            showscale=False,
+            hoverinfo='none'
+        )
+    )
+
+    fig.update_layout(
+        title='Weekly Timetable',
+        xaxis=dict(
+            title='Day of Week',
+            type='category',
+            categoryorder='array',
+            categoryarray=days,
+            showgrid=True,
+            gridcolor='lightgrey',
+            gridwidth=1
+        ),
+        yaxis=dict(
+            title='Hour of Day',
+            tickmode='array',
+            tickvals=hours,
+            ticktext=hour_labels,
+            showgrid=True,
+            gridcolor='lightgrey',
+            gridwidth=1,
+            range=[19, 7]  # initial view: 07:00 at top, 19:00 at bottom; allows pan/zoom to full 00:00–23:00
+        ),
+        margin=dict(l=60, r=40, t=60, b=40),
+        plot_bgcolor='white'
+    )
+    return fig
+
+# initialise Dash app
+app = dash.Dash(__name__)
+
+# Create a tabbed layout for each theatre
+tabs = []
+for theatre in theatres:
+    fig = create_empty_timetable()
+    fig.update_layout(title=theatre)
+    tabs.append(
+        dcc.Tab(
+            label=theatre,
+            children=[dcc.Graph(
+                id=f"timetable-{theatre.lower().replace(' ', '-')}",
+                figure=fig
+            )]
+        )
+    )
+
+app.layout = html.Div([
+    html.H1('Weekly Theatre Timetables'),
+    dcc.Tabs(children=tabs)
+])
+
+if __name__ == '__main__':
+    app.run(debug=True)

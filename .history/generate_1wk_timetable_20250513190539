@@ -1,0 +1,62 @@
+import dash
+from dash import dcc, html
+import plotly.graph_objects as go
+
+# List of theatres
+theatres = ['Theatre A', 'Theatre B', 'Theatre C']  # add or remove theatres as needed
+
+def create_empty_timetable():
+    """Generate a blank timetable template for a week (Mon-Sun) vs hours (0-23)"""
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    hours = list(range(24))  # 0 to 23 hours
+
+    fig = go.Figure()
+    # Add invisible heatmap for layout
+    fig.add_trace(
+        go.Heatmap(
+            z=[[None for _ in days] for _ in hours],
+            x=days,
+            y=hours,
+            showscale=False,  # hide colorbar
+            hoverinfo='none'
+        )
+    )
+
+    fig.update_layout(
+        title='Weekly Timetable',
+        xaxis=dict(title='Day of Week', type='category'),
+        yaxis=dict(title='Hour of Day', autorange='reversed'),
+        margin=dict(l=50, r=50, t=50, b=50),
+        plot_bgcolor='white'
+    )
+    return fig
+
+# Initialize Dash app
+app = dash.Dash(__name__)
+
+# Create tabs for each theatre
+tabs = []
+for theatre in theatres:
+    fig = create_empty_timetable()
+    fig.update_layout(title=theatre)
+
+    tab = dcc.Tab(
+        label=theatre,
+        children=[
+            dcc.Graph(
+                id=f'timetable-{theatre.lower().replace(" ", "-")}',
+                figure=fig
+            )
+        ]
+    )
+    tabs.append(tab)
+
+# App layout with tabs
+app.layout = html.Div([
+    html.H1('Weekly Theatre Timetables'),
+    dcc.Tabs(children=tabs)
+])
+
+if __name__ == '__main__':
+    # Updated to use app.run() instead of deprecated run_server()
+    app.run(debug=True)
